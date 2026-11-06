@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#008bd0">
+  <meta name="description" content="Collega e controlla la tua SoftHand+ via Bluetooth Low Energy.">
+  <title>SoftHand+ · Controllo BLE</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="qb-logo.png">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./" aria-label="qbrobotics · SoftHand+"><img class="brand-logo" src="qbrobotics.png" alt="qbrobotics"></a><span class="tag">SOFTHAND+ · CONTROLLO BLE</span></header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">UNA CONNESSIONE. LA TUA MANO.</p>
+      <h1>Il controllo,<br><span>a portata di mano.</span></h1>
+      <p class="lead">Collega la SoftHand+ e invia i comandi dal browser.<br>Il collegamento con la mano resta sul tuo dispositivo.</p>
+    </section>
+    <aside id="compatibility" class="notice" role="status">Verifica compatibilità del browser…</aside>
+    <div class="workspace">
+      <section class="panel connection">
+        <div class="section-head"><span class="number">01</span><h2>Connessione</h2><span id="connectionBadge" class="badge">Offline</span></div>
+        <div class="device-art" aria-hidden="true"><svg viewBox="0 0 260 210" fill="none"><circle cx="130" cy="105" r="88" stroke="currentColor" stroke-opacity=".1"/><circle cx="130" cy="105" r="65" stroke="currentColor" stroke-opacity=".1"/><path d="M92 165V92a9 9 0 0 1 18 0v35-76a9 9 0 0 1 18 0v69-80a9 9 0 0 1 18 0v80-65a9 9 0 0 1 18 0v83l14-22a10 10 0 0 1 17 10l-23 44c-8 15-19 23-36 23h-10c-18 0-34-11-34-28Z" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="m58 66 10-10-10-10m144 0-10 10 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3 id="deviceName">La tua SoftHand+</h3>
+        <p id="deviceDetail" class="muted">Accendi la mano e avvicinala al dispositivo.</p>
+        <button id="connect" class="primary">Cerca e connetti</button>
+        <button id="disconnect" class="secondary" disabled>Disconnetti</button>
+        <dl class="facts"><div><dt>Protocollo</dt><dd>Bluetooth Low Energy</dd></div><div><dt>ID dispositivo</dt><dd id="deviceId">—</dd></div><div><dt>Stato motori</dt><dd id="motorState">Sconosciuto</dd></div></dl>
+        <p class="fine">La disconnessione non spegne i motori. Disabilitali prima di terminare.</p>
+      </section>
+      <section class="panel control">
+        <div class="section-head"><span class="number">02</span><h2>Movimento</h2></div>
+        <p class="muted">Prima prova con la mano libera, senza oggetti nella presa.</p>
+        <label class="consent"><input id="consent" type="checkbox"><span>La mano è libera. Ho verificato che il controllo sia impostato in modalità posizione con ingresso seriale.</span></label>
+        <div class="motor-actions"><button id="enable" class="primary" disabled>Abilita e apri</button><button id="disable" class="danger" disabled>Disabilita motori</button></div>
+        <p class="fine">“Abilita e apri” imposta prima il riferimento a zero. La mano può muoversi durante l’operazione.</p>
+        <div class="divider"></div>
+        <p class="fine">Limite di chiusura: <strong>19000</strong> unità (100%).</p>
+        <div class="position-head"><label for="closure">Riferimento di chiusura</label><output id="percentage" for="closure">0<span>%</span></output></div>
+        <input id="closure" class="slider" type="range" min="0" max="100" step="1" value="0" aria-describedby="targetDetail" disabled>
+        <div class="range-labels"><span>Aperta</span><span>Chiusa</span></div>
+        <p id="targetDetail" class="control-hint" role="status">Connetti la mano per abilitare il cursore.</p>
+        <div class="position-actions"><button id="open" class="secondary" disabled>Apri</button><button id="send" class="primary" disabled>Invia posizione</button><button id="close" class="secondary" disabled>Chiudi</button></div>
+        <p id="lastReference" class="fine">Nessun riferimento inviato. La posizione reale non viene misurata da questa pagina.</p>
+      </section>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">Pronto per la connessione.</div>
+    <section class="panel activity"><div class="section-head"><span class="number">03</span><h2>Attività</h2><button id="clearLog" class="text-button">Pulisci</button></div><ol id="log" aria-label="Registro comunicazione"><li class="empty">Qui compariranno i comandi e le risposte della mano.</li></ol></section>
+    <details class="help"><summary>Come collegarsi da iPhone e Android</summary><p>Android: usa Chrome con Bluetooth attivo. iPhone: apri questo indirizzo in un browser con Web Bluetooth, ad esempio Bluefy. Safari non espone direttamente questa API. La compatibilità effettiva va verificata sul tuo dispositivo.</p><p>Chiudi la connessione da nRF Connect o dall’app Android prima di collegarti qui. Usa HTTPS oppure localhost per lo sviluppo. Nessun comando viene inviato al caricamento della pagina.</p><p>Questa prima versione verifica ID e stato motori. Non carica la tabella parametri, non misura la posizione e non aggiorna il firmware.</p></details>
+  </main>
+  <footer><span>SoftHand+ / Browser companion</span><span>Controllo locale · Nessun comando nel cloud</span></footer>
+</body>
+</html>
