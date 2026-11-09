@@ -1,34 +1,86 @@
 import { SoftHandBle } from './ble.js';
 import { closurePosition } from './protocol.js';
+import { english } from './translations.js';
 
 const $ = id => document.getElementById(id);
 const MAX_POSITION = 19000;
 const motorActive = () => motor !== null && motor > 0;
 let connected = false, busy = false, motor = null, epoch = 0;
 const supported = window.isSecureContext && !!navigator.bluetooth?.requestDevice;
-const log = (kind, message) => {
+function readPreference(key) {
+  try { return window.localStorage.getItem(key); }
+  catch { return null; }
+}
+function savePreference(key, value) {
+  try { window.localStorage.setItem(key, value); }
+  catch { /* Preferences still work for the current page. */ }
+}
+let language = readPreference('softhand-language') === 'en' ? 'en' : 'it';
+let theme = readPreference('softhand-theme') === 'dark' ? 'dark' : 'light';
+const localized = new Map();
+
+function translate(source, values = {}) {
+  const template = language === 'en' && Object.hasOwn(english, source) ? english[source] : source;
+  return template.replace(/\{(\w+)\}/g, (token, key) => Object.hasOwn(values, key) ? values[key] : token);
+}
+function localize(element, format) {
+  localized.set(element, format);
+  element.textContent = format();
+}
+function message(id, source, values) {
+  localize($(id), () => translate(source, values));
+}
+function applyLanguage() {
+  document.documentElement.lang = language;
+  document.title = language === 'en' ? 'SoftHand+ · BLE control' : 'SoftHand+ · Controllo BLE';
+  const toggle = $('language');
+  toggle.textContent = language === 'en' ? 'IT' : 'EN';
+  toggle.lang = language === 'en' ? 'it' : 'en';
+  toggle.setAttribute('aria-label', language === 'en' ? 'Passa all’italiano' : 'Switch to English');
+  $('log').setAttribute('aria-label', language === 'en' ? 'Communication log' : 'Registro comunicazione');
+  for (const [element, format] of localized) element.textContent = format();
+  applyTheme();
+}
+function applyTheme() {
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark';
+  $('theme').textContent = language === 'en'
+    ? (dark ? 'Light mode' : 'Dark mode')
+    : (dark ? 'Tema chiaro' : 'Tema scuro');
+}
+
+const log = (kind, source, values) => {
   const list = $('log');
-  list.querySelector('.empty')?.remove();
+  const placeholder = list.querySelector('.empty');
+  if (placeholder) {
+    localized.delete(placeholder.querySelector('[data-en]'));
+    placeholder.remove();
+  }
   const row = document.createElement('li');
   const time = document.createElement('time');
-  time.textContent = new Date().toLocaleTimeString('it-IT');
+  const timestamp = new Date();
+  localize(time, () => timestamp.toLocaleTimeString(language === 'en' ? 'en-GB' : 'it-IT'));
   const text = document.createElement('span');
-  text.textContent = `${kind} · ${message}`;
+  localize(text, () => `${translate(kind)} · ${translate(source, values)}`);
   row.append(time, text);
   list.append(row);
-  while (list.children.length > 100) list.firstChild.remove();
+  while (list.children.length > 100) removeLogRow(list.firstChild);
   list.scrollTop = list.scrollHeight;
 };
-function status(text, error = false) {
-  $('status').textContent = text;
+function removeLogRow(row) {
+  for (const child of row.children) localized.delete(child);
+  row.remove();
+}
+function status(source, error = false, values) {
+  message('status', source, values);
   $('status').classList.toggle('error', error);
 }
 const ble = new SoftHandBle({ log, disconnected: error => {
   ++epoch; connected = false; busy = false; motor = null;
-  $('deviceName').textContent = 'La tua SoftHand+';
-  $('deviceDetail').textContent = 'Connessione chiusa. Per continuare, riconnetti.';
+  message('deviceName', 'La tua SoftHand+');
+  message('deviceDetail', 'Connessione chiusa. Per continuare, riconnetti.');
   $('deviceId').textContent = '—';
-  $('lastReference').textContent = 'Riferimento e stato fisico non verificati dopo la disconnessione.';
+  message('lastReference', 'Riferimento e stato fisico non verificati dopo la disconnessione.');
   $('consent').checked = false;
   status(error.message, true); log('BLE', error.message); render();
 } });
@@ -46,8 +98,8 @@ function render() {
   $('closure').disabled = !movable;
   for (const id of ['send', 'close']) $(id).disabled = !movable;
   $('consent').disabled = busy;
-  $('motorState').textContent = motor === null ? 'Sconosciuto' : motorActive() ? 'Abilitati' : 'Disabilitati';
-  $('connectionBadge').textContent = connected ? 'Connessa' : busy ? 'Connessione…' : 'Offline';
+  message('motorState', motor === null ? 'Sconosciuto' : motorActive() ? 'Abilitati' : 'Disabilitati');
+  message('connectionBadge', connected ? 'Connessa' : busy ? 'Connessione…' : 'Offline');
   $('connectionBadge').classList.toggle('connected', connected);
   $('percentage').replaceChildren(document.createTextNode($('closure').value), Object.assign(document.createElement('span'), { textContent: '%' }));
   let blocker = '';
@@ -55,7 +107,9 @@ function render() {
   else if (busy) blocker = 'Operazione in corso. Attendi il completamento.';
   else if (!consent) blocker = 'Conferma che la mano è libera e configurata per il controllo in posizione.';
   else if (!motorActive()) blocker = 'Abilita i motori per usare il cursore.';
-  $('targetDetail').textContent = blocker || `Riferimento: ${closurePosition(Number($('closure').value), MAX_POSITION)} unità. Premi “Invia posizione” per muovere la mano.`;
+  message('targetDetail', blocker || 'Riferimento: {position} unità. Premi “Invia posizione” per muovere la mano.', {
+    position: closurePosition(Number($('closure').value), MAX_POSITION)
+  });
 }
 
 async function action(message, task) {
@@ -72,11 +126,12 @@ $('connect').addEventListener('click', () => {
     const result = await ble.connect(navigator.bluetooth);
     if (!isCurrent()) return;
     connected = true; motor = result.motorState;
+    localized.delete($('deviceName'));
     $('deviceName').textContent = result.name;
-    $('deviceDetail').textContent = 'PING e lettura dello stato motori completati.';
+    message('deviceDetail', 'PING e lettura dello stato motori completati.');
     $('deviceId').textContent = `${result.id} (0x${result.id.toString(16).padStart(2, '0').toUpperCase()})`;
     status('Connessione verificata. Controlla la configurazione prima di muovere la mano.');
-    log('BLE', `Connessa a ${result.name}, ID ${result.id}.`);
+    log('BLE', 'Connessa a {name}, ID {id}.', { name: result.name, id: result.id });
   });
 });
 $('disconnect').addEventListener('click', () => ble.close());
@@ -84,7 +139,7 @@ $('enable').addEventListener('click', () => action('Impostazione apertura e abil
   const state = await ble.enable(isCurrent);
   if (!isCurrent() || state === null) return;
   motor = state;
-  $('lastReference').textContent = 'Ultimo riferimento inviato: 0 (apertura). Posizione reale non misurata.';
+  message('lastReference', 'Ultimo riferimento inviato: 0 (apertura). Posizione reale non misurata.');
   status('Motori abilitati: stato confermato dalla mano. Riferimento di apertura inviato.');
 }));
 $('disable').addEventListener('click', () => action('Disabilitazione motori…', async isCurrent => {
@@ -99,23 +154,48 @@ function move(percent) {
     await ble.setPosition(position);
     if (!isCurrent()) return;
     $('closure').value = percent;
-    $('lastReference').textContent = `Ultimo riferimento inviato: ${position} unità. Posizione reale non misurata.`;
-    status(`Riferimento ${position} inviato via GATT. Il raggiungimento della posizione non è verificato.`);
+    message('lastReference', 'Ultimo riferimento inviato: {position} unità. Posizione reale non misurata.', { position });
+    status('Riferimento {position} inviato via GATT. Il raggiungimento della posizione non è verificato.', false, { position });
   });
 }
 $('open').addEventListener('click', () => move(0));
 $('close').addEventListener('click', () => move(100));
 $('send').addEventListener('click', () => move(Number($('closure').value)));
 for (const id of ['consent', 'closure']) $(id).addEventListener('input', render);
-$('clearLog').addEventListener('click', () => { $('log').replaceChildren(); });
+$('clearLog').addEventListener('click', () => {
+  const list = $('log');
+  const placeholder = list.querySelector('.empty');
+  if (placeholder) localized.delete(placeholder.querySelector('[data-en]'));
+  while (list.firstChild) removeLogRow(list.firstChild);
+});
+$('language').addEventListener('click', () => {
+  language = language === 'it' ? 'en' : 'it';
+  savePreference('softhand-language', language);
+  applyLanguage();
+});
+$('theme').addEventListener('click', () => {
+  theme = theme === 'light' ? 'dark' : 'light';
+  savePreference('softhand-theme', theme);
+  applyTheme();
+});
 window.addEventListener('pagehide', () => ble.close());
 
+for (const element of document.querySelectorAll('[data-en]')) {
+  const italian = element.textContent;
+  localize(element, () => language === 'en' ? element.dataset.en : italian);
+}
+message('deviceName', 'La tua SoftHand+');
+message('deviceDetail', 'Accendi la mano e avvicinala al dispositivo.');
+message('lastReference', 'Nessun riferimento inviato. La posizione reale non viene misurata da questa pagina.');
+status('Pronto per la connessione.');
+applyLanguage();
+
 if (supported) {
-  $('compatibility').textContent = 'API Bluetooth disponibile. Collega una sola app alla mano e mantieni questa pagina in primo piano.';
+  message('compatibility', 'API Bluetooth disponibile. Collega una sola app alla mano e mantieni questa pagina in primo piano.');
 } else {
   $('compatibility').classList.add('unsupported');
-  $('compatibility').textContent = !window.isSecureContext
+  message('compatibility', !window.isSecureContext
     ? 'Apri la pagina tramite HTTPS o localhost: il Bluetooth non è disponibile su HTTP remoto.'
-    : 'Questo browser non espone Web Bluetooth. Su iPhone prova Bluefy; su Android usa Chrome. Safari non supporta direttamente il collegamento.';
+    : 'Questo browser non espone Web Bluetooth. Su iPhone prova Bluefy; su Android usa Chrome. Safari non supporta direttamente il collegamento.');
 }
 render();

@@ -17,7 +17,7 @@ main{max-width:1120px;margin:auto;padding:52px 30px 36px}
 .intro{margin-bottom:30px}
 .eyebrow{color:#007bb8;margin:0 0 18px}
 h1{font-size:clamp(36px,5.2vw,62px);letter-spacing:-2.6px;line-height:1.08;margin:0 0 20px;font-weight:650}
-h1 span{color:#668592}
+h1 span:last-child{color:#668592}
 .lead{color:var(--muted);font-size:16px;line-height:1.65}
 .notice{padding:15px 20px;background:#eaf6fd;border:1px solid #c7e5f5;border-radius:12px;font-size:14px;line-height:1.5;margin-bottom:22px}
 .notice.unsupported{background:#fff0de;border-color:#ead9c0}
@@ -99,3 +99,37 @@ footer{flex-direction:column;padding:20px 16px}
 .brand-logo{display:block;width:220px;height:220px;object-fit:contain;flex-shrink:0}
 .control-hint{font-size:13px;line-height:1.5;padding:12px 14px;border-radius:8px;background:#eaf6fd;color:#145a7b;border:1px solid #c7e5f5}
 @media(max-width:450px){.brand-logo{width:175px;height:175px}.brand{height:48px}.topbar{gap:12px}}
+
+.header-tools,.preferences{display:flex;align-items:center;gap:12px}
+.preferences button{min-height:44px;padding:8px 12px;font-size:13px;white-space:nowrap}
+.preferences #language{min-width:44px}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  color:#e4f0f6;
+  background:#101c25;
+  --dark:#e4f0f6;
+  --muted:#aec3cf;
+  --line:#365162;
+  --accent:#0076b4;
+}
+[data-theme="dark"] .brand{background:#fff;border-radius:8px}
+[data-theme="dark"] .panel,[data-theme="dark"] .secondary{background:#1a2b36}
+[data-theme="dark"] .secondary{border-color:var(--line)}
+[data-theme="dark"] .notice,[data-theme="dark"] .control-hint{background:#18384b;border-color:#32617d;color:#d5efff}
+[data-theme="dark"] .notice.unsupported{background:#422e20;border-color:#79502f;color:#ffe5c8}
+[data-theme="dark"] .danger{background:#462825;border-color:#8a5149;color:#ffd2c9}
+[data-theme="dark"] .status.error{color:#ffb5a7}
+[data-theme="dark"] .badge{background:#2b404e;color:#c3d4de}
+[data-theme="dark"] .badge.connected{background:#1b435c;color:#a6e0ff}
+[data-theme="dark"] .eyebrow,[data-theme="dark"] .device-art{color:#77cbff}
+[data-theme="dark"] h1 span:last-child,[data-theme="dark"] .number,[data-theme="dark"] #log time{color:var(--muted)}
+[data-theme="dark"] .facts>div,[data-theme="dark"] #log li{border-color:var(--line)}
+[data-theme="dark"] :focus-visible{outline-color:#77cbff}
+
+@media(max-width:680px){.header-tools .tag{display:none}}
+@media(max-width:450px){
+  .brand-logo{width:132px;height:132px}
+  .preferences{gap:6px}
+  .preferences button{padding-inline:8px}
+}
