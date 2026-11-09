@@ -1,6 +1,6 @@
-import { SoftHandBle } from './ble.js';
-import { closurePosition } from './protocol.js';
-import { english } from './translations.js';
+import { SoftHandBle } from './ble.js?v=3';
+import { closurePosition } from './protocol.js?v=3';
+import { english } from './translations.js?v=3';
 
 const $ = id => document.getElementById(id);
 const MAX_POSITION = 19000;
@@ -98,8 +98,10 @@ function render() {
   $('open').disabled = !movable;
   // Choosing a percentage is harmless; only sending requires a verified position limit.
   $('closure').disabled = !movable;
-  for (const id of ['send', 'close', ...quickPositions.map(percent => `preset${percent}`)]) $(id).disabled = !movable;
+  for (const id of ['send', 'close']) $(id).disabled = !movable;
+  for (const percent of quickPositions) $(`preset${percent}`).disabled = busy;
   $('readPosition').disabled = !ready;
+  $('getInfo').disabled = !ready;
   $('consent').disabled = busy;
   message('motorState', motor === null ? 'Sconosciuto' : motorActive() ? 'Abilitati' : 'Disabilitati');
   message('connectionBadge', connected ? 'Connessa' : busy ? 'Connessione…' : 'Offline');
@@ -166,6 +168,7 @@ $('close').addEventListener('click', () => move(100));
 $('send').addEventListener('click', () => move(Number($('closure').value)));
 for (const percent of quickPositions) {
   $(`preset${percent}`).addEventListener('click', () => {
+    if (busy) return;
     $('closure').value = percent;
     render();
   });
@@ -177,6 +180,15 @@ $('readPosition').addEventListener('click', () => {
     if (!isCurrent()) return;
     message('measuredPosition', 'Ultima lettura encoder (unità): {positions}.', { positions: positions.join(', ') });
     status('Lettura encoder completata.');
+  });
+});
+$('getInfo').addEventListener('click', () => {
+  if (!connected || busy) return;
+  action('Lettura informazioni dispositivo…', async isCurrent => {
+    const info = await ble.getInfo(isCurrent);
+    if (!isCurrent() || info === null) return;
+    log('INFO', info);
+    status('Informazioni dispositivo aggiunte al log.');
   });
 });
 for (const id of ['consent', 'closure']) $(id).addEventListener('input', render);

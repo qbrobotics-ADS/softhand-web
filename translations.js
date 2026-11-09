@@ -54,5 +54,9 @@ export const english = {
   "Lettura encoder…": "Reading the encoder…",
   "Ultima lettura encoder (unità): {positions}.": "Last encoder reading (units): {positions}.",
   "Lettura encoder completata.": "Encoder reading complete.",
-  "Risposta encoder non valida.": "Invalid encoder response."
+  "Risposta encoder non valida.": "Invalid encoder response.",
+  "Lettura informazioni dispositivo…": "Reading device information…",
+  "Informazioni dispositivo aggiunte al log.": "Device information added to the log.",
+  "Lunghezza Get Info non valida.": "Invalid Get Info length.",
+  "Blocco Get Info incompleto.": "Incomplete Get Info block."
 };

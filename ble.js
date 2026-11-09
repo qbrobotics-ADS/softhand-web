@@ -1,4 +1,4 @@
-import { SERVICE, CHARACTERISTIC, CMD, packet, positionBytes, FrameDecoder, hex } from './protocol.js';
+import { SERVICE, CHARACTERISTIC, CMD, packet, positionBytes, FrameDecoder, hex } from './protocol.js?v=3';
 
 export class SoftHandBle {
   constructor({ log = () => {}, disconnected = () => {}, timeout = 3000 } = {}) {
@@ -105,6 +105,28 @@ export class SoftHandBle {
   }
 
   getMotorState() { return this.enqueue(() => this.readMotorState()); }
+
+  getInfo(isCurrent = () => true) {
+    return this.enqueue(async () => {
+      if (!isCurrent()) return null;
+      // INFO_ALL is type 0. The BLE firmware exposes it as length plus slices.
+      const { data: header } = await this.exchange(CMD.GET_LONG_PKG_LENGTH, [0, 0]);
+      if (!isCurrent()) return null;
+      const length = (header[1] << 8) | header[2];
+      if (header.length !== 3 || header[0] !== 0 || length < 1 || length > 4000) {
+        throw new Error('Lunghezza Get Info non valida.');
+      }
+      const bytes = new Uint8Array(length);
+      for (let offset = 0; offset < length; offset += 50) {
+        const count = Math.min(50, length - offset);
+        const { data } = await this.exchange(CMD.GET_LONG_PKG_SLICE, [offset >> 8, offset & 255, count]);
+        if (!isCurrent()) return null;
+        if (data.length !== count) throw new Error('Blocco Get Info incompleto.');
+        bytes.set(data, offset);
+      }
+      return new TextDecoder().decode(bytes).replace(/\0+$/, '');
+    });
+  }
 
   getPositions() {
     return this.enqueue(async () => {
