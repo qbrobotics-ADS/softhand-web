@@ -4,6 +4,7 @@ import { english } from './translations.js';
 
 const $ = id => document.getElementById(id);
 const MAX_POSITION = 19000;
+const quickPositions = [25, 50, 75];
 const motorActive = () => motor !== null && motor > 0;
 let connected = false, busy = false, motor = null, epoch = 0;
 const supported = window.isSecureContext && !!navigator.bluetooth?.requestDevice;
@@ -81,6 +82,7 @@ const ble = new SoftHandBle({ log, disconnected: error => {
   message('deviceDetail', 'Connessione chiusa. Per continuare, riconnetti.');
   $('deviceId').textContent = '—';
   message('lastReference', 'Riferimento e stato fisico non verificati dopo la disconnessione.');
+  message('measuredPosition', 'Nessuna lettura encoder.');
   $('consent').checked = false;
   status(error.message, true); log('BLE', error.message); render();
 } });
@@ -96,7 +98,8 @@ function render() {
   $('open').disabled = !movable;
   // Choosing a percentage is harmless; only sending requires a verified position limit.
   $('closure').disabled = !movable;
-  for (const id of ['send', 'close']) $(id).disabled = !movable;
+  for (const id of ['send', 'close', ...quickPositions.map(percent => `preset${percent}`)]) $(id).disabled = !movable;
+  $('readPosition').disabled = !ready;
   $('consent').disabled = busy;
   message('motorState', motor === null ? 'Sconosciuto' : motorActive() ? 'Abilitati' : 'Disabilitati');
   message('connectionBadge', connected ? 'Connessa' : busy ? 'Connessione…' : 'Offline');
@@ -139,7 +142,7 @@ $('enable').addEventListener('click', () => action('Impostazione apertura e abil
   const state = await ble.enable(isCurrent);
   if (!isCurrent() || state === null) return;
   motor = state;
-  message('lastReference', 'Ultimo riferimento inviato: 0 (apertura). Posizione reale non misurata.');
+  message('lastReference', 'Ultimo riferimento inviato: {position} unità.', { position: 0 });
   status('Motori abilitati: stato confermato dalla mano. Riferimento di apertura inviato.');
 }));
 $('disable').addEventListener('click', () => action('Disabilitazione motori…', async isCurrent => {
@@ -154,13 +157,28 @@ function move(percent) {
     await ble.setPosition(position);
     if (!isCurrent()) return;
     $('closure').value = percent;
-    message('lastReference', 'Ultimo riferimento inviato: {position} unità. Posizione reale non misurata.', { position });
-    status('Riferimento {position} inviato via GATT. Il raggiungimento della posizione non è verificato.', false, { position });
+    message('lastReference', 'Ultimo riferimento inviato: {position} unità.', { position });
+    status('Riferimento {position} inviato. Premi “Leggi posizione” per verificare.', false, { position });
   });
 }
 $('open').addEventListener('click', () => move(0));
 $('close').addEventListener('click', () => move(100));
 $('send').addEventListener('click', () => move(Number($('closure').value)));
+for (const percent of quickPositions) {
+  $(`preset${percent}`).addEventListener('click', () => {
+    $('closure').value = percent;
+    render();
+  });
+}
+$('readPosition').addEventListener('click', () => {
+  if (!connected || busy) return;
+  action('Lettura encoder…', async isCurrent => {
+    const positions = await ble.getPositions();
+    if (!isCurrent()) return;
+    message('measuredPosition', 'Ultima lettura encoder (unità): {positions}.', { positions: positions.join(', ') });
+    status('Lettura encoder completata.');
+  });
+});
 for (const id of ['consent', 'closure']) $(id).addEventListener('input', render);
 $('clearLog').addEventListener('click', () => {
   const list = $('log');
@@ -186,7 +204,8 @@ for (const element of document.querySelectorAll('[data-en]')) {
 }
 message('deviceName', 'La tua SoftHand+');
 message('deviceDetail', 'Accendi la mano e avvicinala al dispositivo.');
-message('lastReference', 'Nessun riferimento inviato. La posizione reale non viene misurata da questa pagina.');
+message('lastReference', 'Nessun riferimento inviato.');
+message('measuredPosition', 'Nessuna lettura encoder.');
 status('Pronto per la connessione.');
 applyLanguage();
 

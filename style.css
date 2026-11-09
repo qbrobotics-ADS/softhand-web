@@ -56,6 +56,8 @@ h3{font-size:21px;margin:8px 0 0;text-align:center}
 .slider{width:100%;accent-color:#008bd0;margin:18px 0 7px;cursor:pointer;height:24px}
 .slider:disabled{opacity:.4;cursor:not-allowed}
 .range-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+.quick-positions,.position-reading{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px}
+.quick-positions button{min-height:44px;padding:8px 12px}
 .position-actions{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:9px;margin:19px 0 10px}
 .status{padding:18px 5px;font-size:13px;min-height:58px;line-height:1.5}
 .status.error{color:#a13929}

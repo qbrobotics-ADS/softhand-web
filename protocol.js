@@ -1,6 +1,6 @@
 export const SERVICE = '65333333-a115-11e2-9e9a-0800200ca100';
 export const CHARACTERISTIC = '65333333-a115-11e2-9e9a-0800200ca102';
-export const CMD = Object.freeze({ PING: 0, ACTIVATE: 128, GET_ACTIVATE: 129, SET_INPUTS: 130 });
+export const CMD = Object.freeze({ PING: 0, ACTIVATE: 128, GET_ACTIVATE: 129, SET_INPUTS: 130, GET_MEASUREMENTS: 132 });
 
 export function packet(id, command, data = []) {
   if (!Number.isInteger(id) || id < 0 || id > 255) throw new Error('ID non valido.');

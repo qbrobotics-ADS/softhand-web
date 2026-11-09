@@ -41,14 +41,24 @@
         <div class="position-head"><label for="closure"><span data-en="Closure target">Riferimento di chiusura</span></label><output id="percentage" for="closure">0<span>%</span></output></div>
         <input id="closure" class="slider" type="range" min="0" max="100" step="1" value="0" aria-describedby="targetDetail" disabled>
         <div class="range-labels"><span><span data-en="Open">Aperta</span></span><span><span data-en="Closed">Chiusa</span></span></div>
+        <div class="quick-positions" role="group" aria-labelledby="quick-position-label">
+          <span id="quick-position-label" class="fine" data-en="Quick positions">Posizioni rapide</span>
+          <button id="preset25" class="secondary" type="button" disabled>25%</button>
+          <button id="preset50" class="secondary" type="button" disabled>50%</button>
+          <button id="preset75" class="secondary" type="button" disabled>75%</button>
+        </div>
         <p id="targetDetail" class="control-hint" role="status">Connetti la mano per abilitare il cursore.</p>
         <div class="position-actions"><button id="open" class="secondary" disabled><span data-en="Open">Apri</span></button><button id="send" class="primary" disabled><span data-en="Send position">Invia posizione</span></button><button id="close" class="secondary" disabled><span data-en="Close">Chiudi</span></button></div>
-        <p id="lastReference" class="fine">Nessun riferimento inviato. La posizione reale non viene misurata da questa pagina.</p>
+        <p id="lastReference" class="fine">Nessun riferimento inviato.</p>
+        <div class="position-reading">
+          <button id="readPosition" class="secondary" type="button" disabled><span data-en="Read position">Leggi posizione</span></button>
+          <p id="measuredPosition" class="fine" role="status">Nessuna lettura encoder.</p>
+        </div>
       </section>
     </div>
     <div id="status" class="status" role="status" aria-live="polite">Pronto per la connessione.</div>
     <section class="panel activity"><div class="section-head"><span class="number">03</span><h2><span data-en="Activity">Attività</span></h2><button id="clearLog" class="text-button"><span data-en="Clear">Pulisci</span></button></div><ol id="log" aria-label="Registro comunicazione"><li class="empty"><span data-en="Commands and responses will appear here.">Qui compariranno i comandi e le risposte della mano.</span></li></ol></section>
-    <details class="help"><summary><span data-en="How to connect from iPhone and Android">Come collegarsi da iPhone e Android</span></summary><p><span data-en="On Android, use Chrome with Bluetooth enabled. On iPhone, open this address in a Web Bluetooth browser such as Bluefy. Safari does not expose this API directly. Check compatibility on your device.">Android: usa Chrome con Bluetooth attivo. iPhone: apri questo indirizzo in un browser con Web Bluetooth, ad esempio Bluefy. Safari non espone direttamente questa API. La compatibilità effettiva va verificata sul tuo dispositivo.</span></p><p><span data-en="Disconnect from nRF Connect or the Android app before connecting here. Use HTTPS or localhost for development. Loading the page sends no commands.">Chiudi la connessione da nRF Connect o dall’app Android prima di collegarti qui. Usa HTTPS oppure localhost per lo sviluppo. Nessun comando viene inviato al caricamento della pagina.</span></p><p><span data-en="This version checks the device ID and motor status. It does not load the parameter table, measure position, or update firmware.">Questa prima versione verifica ID e stato motori. Non carica la tabella parametri, non misura la posizione e non aggiorna il firmware.</span></p></details>
+    <details class="help"><summary><span data-en="How to connect from iPhone and Android">Come collegarsi da iPhone e Android</span></summary><p><span data-en="On Android, use Chrome with Bluetooth enabled. On iPhone, open this address in a Web Bluetooth browser such as Bluefy. Safari does not expose this API directly. Check compatibility on your device.">Android: usa Chrome con Bluetooth attivo. iPhone: apri questo indirizzo in un browser con Web Bluetooth, ad esempio Bluefy. Safari non espone direttamente questa API. La compatibilità effettiva va verificata sul tuo dispositivo.</span></p><p><span data-en="Disconnect from nRF Connect or the Android app before connecting here. Use HTTPS or localhost for development. Loading the page sends no commands.">Chiudi la connessione da nRF Connect o dall’app Android prima di collegarti qui. Usa HTTPS oppure localhost per lo sviluppo. Nessun comando viene inviato al caricamento della pagina.</span></p><p><span data-en="This version checks the device ID and motor status and reads encoder values on demand.">Questa versione verifica ID e stato motori e legge gli encoder su richiesta.</span></p></details>
   </main>
   <footer><span>SoftHand+ / Browser companion</span><span><span data-en="Local control · No cloud commands">Controllo locale · Nessun comando nel cloud</span></span></footer>
 </body>

@@ -106,6 +106,15 @@ export class SoftHandBle {
 
   getMotorState() { return this.enqueue(() => this.readMotorState()); }
 
+  getPositions() {
+    return this.enqueue(async () => {
+      const { data } = await this.exchange(CMD.GET_MEASUREMENTS);
+      if (!data.length || data.length % 2 !== 0) throw new Error('Risposta encoder non valida.');
+      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      return Array.from({ length: data.length / 2 }, (_, index) => view.getInt16(index * 2));
+    });
+  }
+
   enable(isCurrent = () => true) {
     return this.enqueue(async () => {
       // Set an explicit opening reference before enabling instead of reusing an unknown old target.
