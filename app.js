@@ -1,6 +1,6 @@
 import { SoftHandBle } from './ble.js?v=4';
 import { closurePosition } from './protocol.js?v=4';
-import { english } from './translations.js?v=4';
+import { english } from './translations.js?v=5';
 
 const $ = id => document.getElementById(id);
 const MAX_POSITION = 19000;
@@ -58,6 +58,7 @@ function recordDiagnostic(entry) {
   diagnostics.push({ timestamp: new Date().toISOString(), ...entry });
   if (diagnostics.length > DIAGNOSTIC_LIMIT) diagnostics.shift();
   $('downloadLog').disabled = false;
+  $('downloadMeasurements').disabled = !diagnostics.some(event => event.kind === 'telemetry');
 }
 
 const log = (kind, source, values) => {
@@ -249,19 +250,56 @@ $('clearLog').addEventListener('click', () => {
   while (list.firstChild) removeLogRow(list.firstChild);
   diagnostics.length = 0;
   $('downloadLog').disabled = true;
+  $('downloadMeasurements').disabled = true;
 });
-$('downloadLog').addEventListener('click', () => {
-  if (!diagnostics.length) return;
-  const exportedAt = new Date().toISOString();
-  const report = { exportedAt, device: lastDevice, entries: diagnostics };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
+
+function downloadFile(content, type, name, exportedAt) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `softhand-diagnostics-${exportedAt.replace(/[:.]/g, '-')}.json`;
+  link.download = `softhand-${exportedAt.replace(/[:.]/g, '-')}-${name}`;
   document.body.append(link);
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('downloadLog').addEventListener('click', () => {
+  if (!diagnostics.length) return;
+  const exportedAt = new Date().toISOString();
+  const device = lastDevice ? `${lastDevice.name} (ID ${lastDevice.id})` : '—';
+  const lines = [
+    'SoftHand+ · Log',
+    `${translate('Esportato il')}: ${exportedAt}`,
+    `${translate('Ultimo dispositivo')}: ${device}`,
+    '',
+    ...diagnostics.map(entry => {
+      const detail = entry.kind === 'telemetry'
+        ? translate('Encoder (unità): {positions} | Corrente (mA): {currents}', {
+          positions: entry.positions.join(', '), currents: entry.currents.join(', ')
+        })
+        : entry.message;
+      return `[${entry.timestamp}] ${entry.kind.toUpperCase()} · ${detail}`;
+    })
+  ];
+  downloadFile(lines.join('\r\n') + '\r\n', 'text/plain;charset=utf-8', 'log.txt', exportedAt);
+});
+
+$('downloadMeasurements').addEventListener('click', () => {
+  const samples = diagnostics.filter(entry => entry.kind === 'telemetry');
+  if (!samples.length) return;
+  const start = Date.parse(samples[0].timestamp);
+  const encoderCount = Math.max(...samples.map(sample => sample.positions.length));
+  const encoderColumns = Array.from({ length: encoderCount }, (_, index) => `encoder_${index + 1}`);
+  const rows = [
+    ['timestamp_utc', 'elapsed_ms', 'current_1_mA', 'current_2_mA', ...encoderColumns],
+    ...samples.map(sample => [
+      sample.timestamp, Date.parse(sample.timestamp) - start, ...sample.currents,
+      ...encoderColumns.map((_, index) => sample.positions[index] ?? '')
+    ])
+  ];
+  const csv = rows.map(row => row.join(',')).join('\r\n') + '\r\n';
+  downloadFile(csv, 'text/csv;charset=utf-8', 'measurements.csv', new Date().toISOString());
 });
 $('language').addEventListener('click', () => {
   language = language === 'it' ? 'en' : 'it';

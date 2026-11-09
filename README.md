@@ -17,7 +17,7 @@ Interfaccia web per collegare e controllare la SoftHand+ tramite Bluetooth Low E
 5. Seleziona una percentuale e premi **Invia posizione**. Il cursore da solo non invia comandi. Il 100% corrisponde al riferimento fisso di `19000` unità. I pulsanti **25%**, **50%** e **75%** impostano il cursore. Premi **Avvia lettura posizione e corrente** per aggiornare i valori degli encoder e la corrente in mA. Usa **Ferma lettura** per interrompere gli aggiornamenti.
 6. Premi **Disabilita motori** e attendi la conferma prima di disconnettere. La disconnessione Bluetooth non garantisce lo spegnimento dei motori.
 
-**Scarica diagnostica** nel pannello **03 Log** esporta un JSON con il dispositivo e le ultime 1000 voci, inclusi orari, pacchetti BLE, letture ed eventuali informazioni firmware.
+In **03 Log**, **Scarica log (.txt)** esporta le ultime 1000 voci, inclusi orari UTC, pacchetti BLE, letture ed eventuali informazioni firmware. **Scarica misure (.csv)** esporta le letture disponibili, una riga per campione. Per un grafico usa `elapsed_ms` come asse del tempo e le colonne delle correnti o degli encoder come serie. In Excel, importa il file selezionando la virgola come separatore.
 
 ### Pubblicazione
 
@@ -36,7 +36,7 @@ Browser interface for connecting to and controlling a SoftHand+ over Bluetooth L
 5. Choose a percentage and select **Send position**. Moving the slider alone sends no command. A setting of 100% corresponds to a fixed target of `19000` units. The **25%**, **50%**, and **75%** buttons set the slider. Select **Start position and current readings** to refresh encoder values and current in mA. Select **Stop readings** to stop updates.
 6. Select **Disable motors** and wait for confirmation before disconnecting. Losing the Bluetooth connection does not guarantee that the motors are disabled.
 
-**Download diagnostics** in **03 Log** exports a JSON file with the device and the latest 1000 entries, including timestamps, BLE packets, readings, and any firmware information retrieved.
+In **03 Log**, **Download log (.txt)** exports the latest 1000 entries, including UTC timestamps, BLE packets, readings, and any firmware information retrieved. **Download measurements (.csv)** exports available readings, one row per sample. Use `elapsed_ms` as the time axis and the current or encoder columns as series. In Excel, import the file with comma as the delimiter.
 
 ### Deployment
 

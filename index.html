@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#008bd0">
   <meta name="description" content="Collega e controlla la tua SoftHand+ via Bluetooth Low Energy.">
   <title>SoftHand+ · Controllo BLE</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <link rel="icon" type="image/png" href="qb-logo.png">
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=5"></script>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="./" aria-label="qbrobotics · SoftHand+"><img class="brand-logo" src="qbrobotics.png" alt="qbrobotics"></a><div class="header-tools"><span class="tag"><span data-en="SOFTHAND+ · BLE CONTROL">SOFTHAND+ · CONTROLLO BLE</span></span><div class="preferences"><button id="language" class="secondary" type="button" aria-label="Switch to English" lang="en">EN</button><button id="theme" class="secondary" type="button">Tema scuro</button></div></div></header>
@@ -60,7 +60,8 @@
       </section>
       <section class="panel activity"><div class="section-head"><span class="number">03</span><h2>Log</h2><button id="clearLog" class="text-button"><span data-en="Clear">Pulisci</span></button></div>
         <button id="getInfo" class="secondary" type="button" disabled>Get Info</button>
-        <button id="downloadLog" class="secondary" type="button" disabled><span data-en="Download diagnostics">Scarica diagnostica</span></button>
+        <button id="downloadLog" class="primary" type="button" disabled><span data-en="Download log (.txt)">Scarica log (.txt)</span></button>
+        <button id="downloadMeasurements" class="secondary" type="button" disabled><span data-en="Download measurements (.csv)">Scarica misure (.csv)</span></button>
         <ol id="log" aria-label="Registro comunicazione"><li class="empty"><span data-en="Commands and responses will appear here.">Qui compariranno i comandi e le risposte della mano.</span></li></ol></section>
     </div>
     <div id="status" class="status" role="status" aria-live="polite">Pronto per la connessione.</div>
