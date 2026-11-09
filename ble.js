@@ -1,4 +1,4 @@
-import { SERVICE, CHARACTERISTIC, CMD, packet, positionBytes, FrameDecoder, hex } from './protocol.js?v=3';
+import { SERVICE, CHARACTERISTIC, CMD, packet, positionBytes, FrameDecoder, hex } from './protocol.js?v=4';
 
 export class SoftHandBle {
   constructor({ log = () => {}, disconnected = () => {}, timeout = 3000 } = {}) {
@@ -134,6 +134,18 @@ export class SoftHandBle {
       if (!data.length || data.length % 2 !== 0) throw new Error('Risposta encoder non valida.');
       const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
       return Array.from({ length: data.length / 2 }, (_, index) => view.getInt16(index * 2));
+    });
+  }
+
+  getTelemetry() {
+    return this.enqueue(async () => {
+      const { data } = await this.exchange(CMD.GET_CURR_AND_MEAS);
+      if (data.length < 6 || data.length % 2 !== 0) throw new Error('Risposta telemetria non valida.');
+      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      // The driver puts two signed motor currents before the encoder values.
+      const currents = [view.getInt16(0), view.getInt16(2)];
+      const positions = Array.from({ length: (data.length - 4) / 2 }, (_, index) => view.getInt16(4 + index * 2));
+      return { currents, positions };
     });
   }
 

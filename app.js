@@ -1,12 +1,16 @@
-import { SoftHandBle } from './ble.js?v=3';
-import { closurePosition } from './protocol.js?v=3';
-import { english } from './translations.js?v=3';
+import { SoftHandBle } from './ble.js?v=4';
+import { closurePosition } from './protocol.js?v=4';
+import { english } from './translations.js?v=4';
 
 const $ = id => document.getElementById(id);
 const MAX_POSITION = 19000;
 const quickPositions = [25, 50, 75];
+const TELEMETRY_DELAY = 250;
+const DIAGNOSTIC_LIMIT = 1000;
 const motorActive = () => motor !== null && motor > 0;
 let connected = false, busy = false, motor = null, epoch = 0;
+let liveSession = null, liveTimer, samplePending = false, lastDevice = null;
+const diagnostics = [];
 const supported = window.isSecureContext && !!navigator.bluetooth?.requestDevice;
 function readPreference(key) {
   try { return window.localStorage.getItem(key); }
@@ -50,7 +54,14 @@ function applyTheme() {
     : (dark ? 'Tema chiaro' : 'Tema scuro');
 }
 
+function recordDiagnostic(entry) {
+  diagnostics.push({ timestamp: new Date().toISOString(), ...entry });
+  if (diagnostics.length > DIAGNOSTIC_LIMIT) diagnostics.shift();
+  $('downloadLog').disabled = false;
+}
+
 const log = (kind, source, values) => {
+  recordDiagnostic({ kind, message: translate(source, values) });
   const list = $('log');
   const placeholder = list.querySelector('.empty');
   if (placeholder) {
@@ -78,11 +89,13 @@ function status(source, error = false, values) {
 }
 const ble = new SoftHandBle({ log, disconnected: error => {
   ++epoch; connected = false; busy = false; motor = null;
+  stopTelemetry();
   message('deviceName', 'La tua SoftHand+');
   message('deviceDetail', 'Connessione chiusa. Per continuare, riconnetti.');
   $('deviceId').textContent = '—';
   message('lastReference', 'Riferimento e stato fisico non verificati dopo la disconnessione.');
   message('measuredPosition', 'Nessuna lettura encoder.');
+  message('measuredCurrent', 'Nessuna lettura corrente.');
   $('consent').checked = false;
   status(error.message, true); log('BLE', error.message); render();
 } });
@@ -100,7 +113,9 @@ function render() {
   $('closure').disabled = !movable;
   for (const id of ['send', 'close']) $(id).disabled = !movable;
   for (const percent of quickPositions) $(`preset${percent}`).disabled = busy;
-  $('readPosition').disabled = !ready;
+  $('readPosition').disabled = !ready && liveSession === null;
+  message('readPosition', liveSession ? 'Ferma lettura' : 'Avvia lettura posizione e corrente');
+  $('readPosition').setAttribute('aria-pressed', String(liveSession !== null));
   $('getInfo').disabled = !ready;
   $('consent').disabled = busy;
   message('motorState', motor === null ? 'Sconosciuto' : motorActive() ? 'Abilitati' : 'Disabilitati');
@@ -131,6 +146,7 @@ $('connect').addEventListener('click', () => {
     const result = await ble.connect(navigator.bluetooth);
     if (!isCurrent()) return;
     connected = true; motor = result.motorState;
+    lastDevice = { id: result.id, name: result.name };
     localized.delete($('deviceName'));
     $('deviceName').textContent = result.name;
     message('deviceDetail', 'PING e lettura dello stato motori completati.');
@@ -160,7 +176,7 @@ function move(percent) {
     if (!isCurrent()) return;
     $('closure').value = percent;
     message('lastReference', 'Ultimo riferimento inviato: {position} unità.', { position });
-    status('Riferimento {position} inviato. Premi “Leggi posizione” per verificare.', false, { position });
+    status('Riferimento {position} inviato.', false, { position });
   });
 }
 $('open').addEventListener('click', () => move(0));
@@ -173,14 +189,48 @@ for (const percent of quickPositions) {
     render();
   });
 }
+function stopTelemetry() {
+  liveSession = null;
+  window.clearTimeout(liveTimer);
+}
+
+async function pollTelemetry() {
+  const session = liveSession;
+  if (!session || samplePending) return;
+  if (!busy && !document.hidden) {
+    samplePending = true;
+    try {
+      const sample = await ble.getTelemetry();
+      if (liveSession === session) {
+        message('measuredPosition', 'Ultima lettura encoder (unità): {positions}.', { positions: sample.positions.join(', ') });
+        message('measuredCurrent', 'Ultima lettura corrente (mA): {currents}.', { currents: sample.currents.join(', ') });
+        recordDiagnostic({ kind: 'telemetry', ...sample });
+      }
+    } catch (error) {
+      if (liveSession === session) {
+        stopTelemetry();
+        status(error.message, true);
+        log('ERRORE', error.message);
+        render();
+      }
+    } finally {
+      samplePending = false;
+    }
+  }
+  if (liveSession) liveTimer = window.setTimeout(pollTelemetry, TELEMETRY_DELAY);
+}
+
 $('readPosition').addEventListener('click', () => {
-  if (!connected || busy) return;
-  action('Lettura encoder…', async isCurrent => {
-    const positions = await ble.getPositions();
-    if (!isCurrent()) return;
-    message('measuredPosition', 'Ultima lettura encoder (unità): {positions}.', { positions: positions.join(', ') });
-    status('Lettura encoder completata.');
-  });
+  if (liveSession) {
+    stopTelemetry();
+    status('Lettura continua fermata.');
+  } else {
+    if (!connected || busy) return;
+    liveSession = {};
+    status('Lettura continua attiva.');
+    void pollTelemetry();
+  }
+  render();
 });
 $('getInfo').addEventListener('click', () => {
   if (!connected || busy) return;
@@ -197,6 +247,21 @@ $('clearLog').addEventListener('click', () => {
   const placeholder = list.querySelector('.empty');
   if (placeholder) localized.delete(placeholder.querySelector('[data-en]'));
   while (list.firstChild) removeLogRow(list.firstChild);
+  diagnostics.length = 0;
+  $('downloadLog').disabled = true;
+});
+$('downloadLog').addEventListener('click', () => {
+  if (!diagnostics.length) return;
+  const exportedAt = new Date().toISOString();
+  const report = { exportedAt, device: lastDevice, entries: diagnostics };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `softhand-diagnostics-${exportedAt.replace(/[:.]/g, '-')}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 $('language').addEventListener('click', () => {
   language = language === 'it' ? 'en' : 'it';
@@ -208,7 +273,10 @@ $('theme').addEventListener('click', () => {
   savePreference('softhand-theme', theme);
   applyTheme();
 });
-window.addEventListener('pagehide', () => ble.close());
+window.addEventListener('pagehide', () => {
+  stopTelemetry();
+  ble.close();
+});
 
 for (const element of document.querySelectorAll('[data-en]')) {
   const italian = element.textContent;
@@ -218,6 +286,7 @@ message('deviceName', 'La tua SoftHand+');
 message('deviceDetail', 'Accendi la mano e avvicinala al dispositivo.');
 message('lastReference', 'Nessun riferimento inviato.');
 message('measuredPosition', 'Nessuna lettura encoder.');
+message('measuredCurrent', 'Nessuna lettura corrente.');
 status('Pronto per la connessione.');
 applyLanguage();
 

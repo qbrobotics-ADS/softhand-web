@@ -63,6 +63,7 @@ h3{font-size:21px;margin:8px 0 0;text-align:center}
 .status.error{color:#a13929}
 .activity{padding-bottom:14px}
 #getInfo{width:100%;margin-top:14px}
+#downloadLog{width:100%;margin-top:8px}
 .text-button{margin-left:auto;min-height:32px;padding:5px 10px;background:none;color:var(--muted);font-size:12px}
 #log{list-style:none;padding:0;margin:14px 0 0;max-height:220px;overflow:auto;font:12px/1.6 ui-monospace,Consolas,monospace}
 #log li{display:flex;gap:14px;padding:8px 0;border-top:1px solid #edf3f7;overflow-wrap:anywhere}
